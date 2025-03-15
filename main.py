@@ -1,9 +1,15 @@
 # For generating scripts through CLI. Find the transcript in the output folder.
 
-from utils import load_wav2vec2_asr_model, transcribe_audio
 import os
 import sys
+from utils import load_wav2vec2_asr_model, transcribe_audio
 import whisper
+import torch
+import torchaudio
+
+# Force CPU usage
+os.environ['CUDA_VISIBLE_DEVICES'] = ''
+torch.backends.cudnn.enabled = False
 
 output_directory = "./output"
 if not os.path.exists(output_directory):
@@ -15,28 +21,37 @@ def create_transcript(transcript_method):
     transcript = f'Speech to Text through {transcript_method}\n'
     output_file = f'{output_directory}/{transcript_method}_transcript.txt'
 
-    if transcript_method == 'wav2vec':
-        model_path = 'model.pth'
-        model = load_wav2vec2_asr_model(model_path)
-
-        audio_path = cleaned_audio_path
-        temp = str(transcribe_audio(model, audio_path))
-        temp = temp.replace("|", " ").title()
-        transcript += f"Audio that has been cleaned: {temp}\n"
-
-        audio_path = original_audio_path
-        temp = str(transcribe_audio(model, audio_path))
-        temp = temp.replace("|", " ").title()
-        transcript += f"Audio that has not been cleaned: {temp}\n"
-
-        return transcript, output_file
-    
     try:
-        model = whisper.load_model("base")
-        result = model.transcribe(cleaned_audio_path)
-    except:
-        return "Error: Could not transcribe"
-    return result["text"], output_file
+        if transcript_method == 'wav2vec':
+            model_path = 'model.pth'
+            if not os.path.exists(model_path):
+                print(f"Model file not found: {model_path}")
+                return None, output_file
+            model = load_wav2vec2_asr_model(model_path)
+
+            audio_path = cleaned_audio_path
+            temp = str(transcribe_audio(model, audio_path))
+            temp = temp.replace("|", " ").title()
+            transcript += f"Audio that has been cleaned: {temp}\n"
+
+            audio_path = original_audio_path
+            temp = str(transcribe_audio(model, audio_path))
+            temp = temp.replace("|", " ").title()
+            transcript += f"Audio that has not been cleaned: {temp}\n"
+
+            return transcript, output_file
+        
+        if transcript_method == 'whisper':
+            try:
+                model = whisper.load_model("base", device='cpu')
+                result = model.transcribe(cleaned_audio_path)
+                return result["text"], output_file
+            except Exception as e:
+                print(f"Whisper transcription error: {str(e)}")
+                return None, output_file
+    except Exception as e:
+        print(f"Error creating transcript: {str(e)}")
+        return None, output_file
     
 transcript, output_file = create_transcript(sys.argv[1])
 with open(output_file, 'w+') as file:
