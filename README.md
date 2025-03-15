@@ -1,58 +1,118 @@
-# Introduction
+# Video to Text Transcription Project Documentation
 
-The following repository is the first among a series of repositories that can read an audio file and transliterate the source language to another target language. The system `Transcribing Video to Text` takes a video file as an input and generates two audio files and a transcript of the audio in a .txt format. The first audio file is the actual audio from the video, while the second file is an audio without the background sounds or any noise.
+## Overview
+This project converts video files to text transcriptions using either Whisper or wav2vec models, with audio preprocessing and noise removal capabilities.
 
-The working of the system is as follows. The video file (.mp4) passed as an input is used to separate the audio and visual streams. The [MoviePy](https://pypi.org/project/moviepy/) python package is used for this purpose. The background sounds and noise are eliminated through [Denoising Methods](https://ankurdhuriya.medium.com/audio-enhancement-and-denoising-methods-3644f0cad85b) and [Spectral Gating](https://pypi.org/project/noisereduce/). Finally the [Wav2Vec2](https://pytorch.org/audio/stable/tutorials/speech_recognition_pipeline_tutorial.html#overview) and [Whisper](https://github.com/openai/whisper) models are used to convert speech to text, thereby accomplishing transcription.
+## Prerequisites
+- Python 3.8 or higher
+- ffmpeg
+- Git
+- Linux/Unix environment
 
+## Installation
 
-## Clone the repository
-
-```
-git clone https://github.com/Dhruv16S/Transcribing-Video-to-Text.git
-```
-
-## Create a virtual environment (optional)
-
-```
-virtualenv env
-source env/scripts/activate
-```
-
-## Download requirements
-
-```
-pip install -r requirements.txt
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd Transcribing-Video-to-Text
 ```
 
-## Download requirements
-
-Download suitable PyTorch version from [here](https://pytorch.org/get-started/locally/). The following cmd worked for me
-```
-pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+2. Make scripts executable:
+```bash
+chmod +x setup.sh generate_transcripts.sh
 ```
 
-## Create a directory
-
-In your project directory, create a new folder
-
-```
-mkdir videos
-```
-Add all your video files in this directory.
-
-## Run the application through CLI
-
-`Note:` Before using the wav2vec model, run the `model.ipynb` file.
-
-```
-./generate_transcripts.sh <video_file_path> <transcription_method>
-```
-Example cmd:
-```
-./generate_transcripts.sh ./videos/input_video.mp4 whisper
+3. Create required directories:
+```bash
+mkdir -p videos audio/original audio/cleaned graphs/original graphs/cleaned output
 ```
 
-`<video_file_path>:` Mention the path of your video file here.
-`<transcription_method>: (optional)` Mention which model must be used for speech to text. (wav2vec or whisper). Use this parameter to generate transcripts, otherwise only the audio files will be generated.
+## Project Structure
 
-The generated audio files can be found in `./audio` and the transcripts can be found under `./output` directories.
+```
+Transcribing-Video-to-Text/
+├── audio/
+│   ├── original/     # Extracted audio files
+│   └── cleaned/      # Noise-reduced audio files
+├── graphs/
+│   ├── original/     # Original audio visualizations
+│   └── cleaned/      # Cleaned audio visualizations
+├── output/           # Generated transcripts
+├── videos/           # Input video files
+├── extract_audio.py  # Audio extraction script
+├── preprocess_audio.py # Audio preprocessing
+├── noise_removal.py  # Noise reduction
+├── main.py          # Main transcription script
+├── utils.py         # Utility functions
+└── setup.sh         # Setup script
+```
+
+## Usage
+
+1. Place your video file in the `videos` directory
+
+2. Run the transcription with Whisper (recommended):
+```bash
+./generate_transcripts.sh ./videos/your_video.mp4 whisper
+```
+
+   Or with wav2vec (requires model.pth):
+```bash
+./generate_transcripts.sh ./videos/your_video.mp4 wav2vec
+```
+
+## Pipeline Steps
+
+1. **Audio Extraction**: 
+   - Extracts audio from video file
+   - Saves as MP3 in audio/original/
+
+2. **Preprocessing**: 
+   - Normalizes audio
+   - Generates visualizations
+   - Saves plots in graphs/original/
+
+3. **Noise Removal**: 
+   - Reduces background noise
+   - Generates cleaned audio visualizations
+   - Saves in audio/cleaned/ and graphs/cleaned/
+
+4. **Transcription**: 
+   - Converts audio to text using selected model
+   - Saves transcript in output/
+
+## Output Files
+
+- **Transcripts**: Found in `output/` directory
+  - `whisper_transcript.txt` or
+  - `wav2vec_transcript.txt`
+
+- **Audio Files**:
+  - Original: `audio/original/audio_extracted.mp3`
+  - Cleaned: `audio/cleaned/cleaned_audio.mp3`
+
+- **Visualizations**:
+  - Original audio waveform and spectrogram in `graphs/original/`
+  - Cleaned audio waveform and spectrogram in `graphs/cleaned/`
+
+## Troubleshooting
+
+1. **Dependency Issues**:
+   ```bash
+   ./setup.sh
+   ```
+
+2. **Permission Denied**:
+   ```bash
+   chmod +x setup.sh generate_transcripts.sh
+   ```
+
+3. **Missing Directories**:
+   ```bash
+   mkdir -p videos audio/original audio/cleaned graphs/original graphs/cleaned output
+   ```
+
+## Notes
+- Whisper method works out of the box
+- wav2vec requires model.pth file in root directory
+- First run downloads required models (~2GB)
